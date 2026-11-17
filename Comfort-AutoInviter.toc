@@ -1,0 +1,8 @@
+## Interface: 16001
+## Title: Comfort-AutoInviter
+## Notes: Nodigt automatisch guildleden uit op basis van een instelbare tekst in guildchat.
+## Author: Mark
+## Version: 1.1
+## SavedVariables: ComfortAutoInviterDB
+
+Comfort-AutoInviter.lua
