@@ -7,11 +7,13 @@ local defaults = {
 }
 
 local inviteFunc = (C_PartyInfo and C_PartyInfo.InviteUnit) or InviteUnit
+local convertToRaidFunc = (C_PartyInfo and C_PartyInfo.ConvertToRaid) or ConvertToRaid
 
 -- Hoofdframe voor events
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("CHAT_MSG_GUILD")
+eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
 -- ==========================================
 -- Settings Venster
@@ -88,9 +90,10 @@ icon:SetPoint("CENTER", 0, 1)
 
 local function UpdateMinimapPosition()
     local angle = math.rad(ComfortAutoInviterDB.minimapAngle or defaults.minimapAngle)
-    local radius = 80
+    local radius = (Minimap:GetWidth() / 2) + 5
     local x = math.cos(angle) * radius
     local y = math.sin(angle) * radius
+    minimapBtn:ClearAllPoints()
     minimapBtn:SetPoint("CENTER", Minimap, "CENTER", x, y)
 end
 
@@ -184,6 +187,14 @@ end)
 -- ==========================================
 -- Event Handling
 -- ==========================================
+local function EnsureRaid()
+    if ComfortAutoInviterDB and ComfortAutoInviterDB.enabled then
+        if IsInGroup() and not IsInRaid() and UnitIsGroupLeader("player") then
+            convertToRaidFunc()
+        end
+    end
+end
+
 eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ADDON_LOADED" and arg1 == ADDON_NAME then
         ComfortAutoInviterDB = ComfortAutoInviterDB or {}
@@ -195,6 +206,9 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         UpdateMinimapPosition()
         UpdateVisualState()
         eventFrame:UnregisterEvent("ADDON_LOADED")
+
+    elseif event == "GROUP_ROSTER_UPDATE" then
+        EnsureRaid()
 
     elseif event == "CHAT_MSG_GUILD" then
         if not ComfortAutoInviterDB or not ComfortAutoInviterDB.enabled then return end
@@ -210,6 +224,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         if senderShort == playerName then return end
 
         if not IsInGroup() or UnitIsGroupLeader("player") or UnitIsGroupAssistant("player") then
+            EnsureRaid()
             inviteFunc(sender)
         end
     end
